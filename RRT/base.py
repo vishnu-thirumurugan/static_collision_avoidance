@@ -41,12 +41,13 @@ class RRTMap:
         
     
     def drawMap(self, obstacles):
-        pygame.draw.circle(self.map, self.Green, self.start, self.nodeRad + 5, 0)
-        pygame.draw.circle(self.map, self.Red, self.goal, self.nodeRad + 20, 1)
+        pygame.draw.circle(self.map, self.Red, self.start, self.nodeRad + 20, 0)
+        pygame.draw.circle(self.map, self.Green, self.goal, self.nodeRad + 20, 0)
         self.drawObs(obstacles)
    
-    def drawPath(self):
-        pass
+    def drawPath(self, path):
+        for node in path :
+            pygame.draw.circle(self.map, self.Red, node, self.nodeRad+3, 0)
     
     def drawObs(self, obstacles):
         obstaclesList = obstacles.copy()
@@ -109,7 +110,7 @@ class RRTGraph:
     
     def add_node(self, n, x, y):
         self.x.insert(n, x)
-        self.y.append(y)
+        self.y.insert(n,y)
     
     def remove_node(self, n):
         self.x.pop(n)
@@ -129,7 +130,7 @@ class RRTGraph:
         (x2, y2) = (self.x[n2], self.y[n2])
         px       = (float(x1) - float(x2))**2
         py       = (float(y1) - float(y2))**2
-        return (px + py)**0.5
+        return (px + py)**(0.5)
     
     def sample_envir(self):   # choosing a sample randomly from the envrironment and checking whether it comes under the obstacle area
         x = int(random.uniform(0, self.mapw))
@@ -164,7 +165,7 @@ class RRTGraph:
             for i in range(0,101):
                 u = i/100  # splitting the line between two nodes by 100
                 x = x1*u + x2*(1-u)
-                y = y1*u + x2*(1-u)
+                y = y1*u + y2*(1-u)
                 if rectang.collidepoint(x,y):
                     return True 
         return False
@@ -172,7 +173,7 @@ class RRTGraph:
     def connect(self, n1, n2):        #connecting two nodes
         (x1, y1)  = (self.x[n1], self.y[n1])
         (x2, y2)  = (self.x[n2], self.y[n2])
-        if self.crossObstacle(x1,y1,x2,y2):
+        if self.CrossObstacle(x1,x2,y1,y2):
             self.remove_node(n2)
             return False
         else:
@@ -199,11 +200,23 @@ class RRTGraph:
                 self.add_node(nrand, x, y)
                 
                 
-    def path_to_goal(self):
-        pass
+    def path_to_goal(self): # extarcting the nodes in the path
+        if self.goalFlag:
+            self.path = []
+            self.path.append(self.goalstate)
+            newpos = self.parent[self.goalstate]
+            while(newpos != 0):
+                self.path.append(newpos)
+                newpos = self.parent[newpos]
+            self.path.append(0)
+        return self.goalFlag
     
-    def getPathCoords(self):
-        pass
+    def getPathCoords(self): # extracting the coordinates of nodes in the path
+        pathCoords = []
+        for node in self.path:
+            x,y = (self.x[node], self.y[node])
+            pathCoords.append((x,y))
+        return pathCoords
     
     def bias(self, ngoal):
         n = self.number_of_nodes()
@@ -225,4 +238,3 @@ class RRTGraph:
         return self.x, self.y, self.parent 
     def cost(self):
         pass
-
